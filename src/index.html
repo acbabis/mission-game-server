@@ -1,0 +1,283 @@
+<!-- Example client application for demo and testing purposes -->
+<html>
+    <head>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        let name;
+        socket.on('disconnect', () => { location = location; });
+
+        navigator.geolocation.getCurrentPosition(({coords}) => {
+            const { latitude, longitude } = coords;
+            socket.emit('userdata', {
+                coords: {
+                    latitude,
+                    longitude
+                }
+            });
+        });
+
+        socket.on('userdata', ({username}) => {
+            name = username;
+            document.querySelector('h1').innerText = username;
+        });
+
+        socket.on('lobby', (message) => {
+            const {game, games, type, isUserHost} = message;
+            switch(type) {
+                case 'room-update': {
+                    const {type, password, players} = game;
+                    document.querySelector('.your-game').innerHTML = `
+                        Type: ${type} ${password ? `[${password}]` : ''}<br>
+                        Players: ${players.join(', ')}<br>
+                        ${
+                            isUserHost ?
+                            `<button class="start" ${players.length >= 5 ? '' : 'disabled'}>Start</button>` :
+                            ''
+                        }
+                        <button class="leave">Leave</button>
+                    `;
+                    break;
+                }
+                case 'room-cancelled': {
+                    document.querySelector('.your-game').innerHTML = '';
+                    break;
+                }
+                case 'listing': {
+                    const {local, password} = games;
+                    document.querySelector('.local-games').innerHTML = local.map(({id, players}) => {
+                        return `<div><button data-id="${id}">Join</button> <span>${players.join(', ')}</span></div>`;
+                    });
+                    document.querySelector('.password-games').innerHTML = password.map(({id, players}) => {
+                        return `<div><button data-id="${id}">Join</button> <span>${players.join(', ')}</span></div>`;
+                    });
+                    break;
+                }
+            }
+        });
+
+        socket.on('game', (game) => {
+            const {
+                state, players, succession, baddies, hasMadeSelection,
+                currentNominations, currentMissionGroup
+            } = game;
+            const leader = players[succession[0]];
+            const gamePanel = document.querySelector('.your-game');
+            const div = document.createElement('div');
+
+            const role = document.createElement('h3');
+            role.innerText = baddies ? `Evil (${baddies.map(i => players[i]).join(', ')})` : 'Good';
+            div.appendChild(role);
+
+            switch(state) {
+            case 'nomination': {
+                const nomination = document.createElement('div');
+                if(leader !== name) {
+                    nomination.innerText = `Waiting for nomination from ${leader}`;
+                } else {
+                    const form = document.createElement('form');
+                    players.map((player, index) => {
+                        const label = document.createElement('label');
+
+                        const checkbox = document.createElement('input');
+                        checkbox.setAttribute('type', 'checkbox');
+                        checkbox.setAttribute('name', index);
+                        label.appendChild(checkbox);
+
+                        const span = document.createElement('span');
+                        span.innerText = player;
+                        label.appendChild(span);
+
+                        return label;
+                    }).forEach(label => form.appendChild(label));
+
+                    const button = document.createElement('button');
+                    button.innerText = 'Nominate';
+                    form.appendChild(button);
+
+                    form.addEventListener('submit', (event) => {
+                        event.preventDefault(); 
+                        const nominations = Array.from(event.target.elements)
+                            .filter(input => input.checked)
+                            .map(input => +input.name);
+                        socket.emit('game', {
+                            action: 'move',
+                            nominations
+                        });
+                    });
+                    nomination.appendChild(form);
+                }
+                div.appendChild(nomination);
+                break;
+            }
+            case 'vote': {
+                const form = document.createElement('form');
+
+                const paragraph = document.createElement('paragraph');
+                paragraph.innerText = `${leader} has nominated ${currentNominations.map(value => players[value]).join(', ')}`;
+                form.appendChild(paragraph);
+
+                console.log(game);
+
+                if(!hasMadeSelection) {
+                    const approve = document.createElement('button');
+                    approve.innerText = 'Approve';
+                    form.appendChild(approve);
+
+                    const reject = document.createElement('button');
+                    reject.innerText = 'Reject';
+                    form.appendChild(reject);
+
+                    approve.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        socket.emit('game', {
+                            action: 'move',
+                            approve: true
+                        });
+                    });
+
+                    reject.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        socket.emit('game', {
+                            action: 'move',
+                            approve: false
+                        });
+                    });
+                }
+
+                div.appendChild(form);
+                break;
+            }
+            case 'mission':
+                const missionNames = currentMissionGroup.map(playerIndex => players[playerIndex]);
+                const playerOnMission = missionNames.includes(name);
+                if(playerOnMission) {
+                    const form = document.createElement('form');
+
+                    const paragraph = document.createElement('paragraph');
+                    paragraph.innerText = `On a mission: ${missionNames.join(', ')}`;
+                    form.appendChild(paragraph);
+
+                    if(!hasMadeSelection) {
+                        const succeed = document.createElement('button');
+                        succeed.innerText = 'Succeed';
+                        form.appendChild(succeed);
+
+                        const fail = document.createElement('button');
+                        fail.innerText = 'Fail';
+                        form.appendChild(fail);
+
+                        succeed.addEventListener('click', (event) => {
+                            event.preventDefault();
+                            socket.emit('game', {
+                                action: 'move',
+                                succeed: true
+                            });
+                        });
+
+                        fail.addEventListener('click', (event) => {
+                            event.preventDefault();
+                            socket.emit('game', {
+                                action: 'move',
+                                succeed: false
+                            });
+                        });
+                    }
+
+                    div.appendChild(form);
+                } else {
+                    const paragraph = document.createElement('paragraph');
+                    paragraph.innerText = `${missionNames.join(', ')} are on a mission`;
+                    div.appendChild(paragraph);
+                }
+                break;
+            }
+
+            gamePanel.innerHTML = '';
+            gamePanel.appendChild(div);
+        });
+
+        socket.on('service-error', (error) => {
+            document.querySelector('.error').innerText = error;
+        });
+
+        window.addEventListener('load', () => {
+            document.querySelector('form.username').addEventListener('submit', (event) => {
+                event.preventDefault();
+                socket.emit('userdata', {
+                    username: event.target.username.value
+                });
+            });
+
+            document.querySelector('.your-game').addEventListener('click', (event) => {
+                const action = event.target.className;
+                if(action === 'start' || action === 'leave') {
+                    event.preventDefault();
+                    socket.emit('lobby', { action });
+                }
+            });
+
+            document.querySelector('.host-local').addEventListener('click', () => {
+                socket.emit('lobby', {
+                    action: 'host',
+                    game: { type: 'local' }
+                });
+            });
+
+            document.querySelector('.host-link').addEventListener('click', () => {
+                socket.emit('lobby', {
+                    action: 'host',
+                    game: { type: 'link' }
+                });
+            });
+
+            document.querySelector('.host-password').addEventListener('click', () => {
+                socket.emit('lobby', {
+                    action: 'host',
+                    game: { type: 'password', password: prompt('password') }
+                });
+            });
+
+            document.querySelector('.local-games').addEventListener('click', ({target}) => {
+                const id = target.getAttribute('data-id');
+                if(typeof id === 'string') {
+                    socket.emit('lobby', {
+                        action: 'join',
+                        type: 'local',
+                        id
+                    })
+                }
+            });
+
+            document.querySelector('.password-games').addEventListener('click', ({target}) => {
+                const id = target.getAttribute('data-id');
+                if(typeof id === 'string') {
+                    socket.emit('lobby', {
+                        action: 'join',
+                        type: 'password',
+                        id,
+                        password: prompt('password')
+                    })
+                }
+            });
+        });
+    </script>
+    </head>
+    <body>
+        <h1></h1>
+        <form class="username">
+            <input type="text" name="username" placeholder="Username">
+            <button>Submit</button>
+        </form>
+        <button class="host-local">Host Local Game</button>
+        <button class="host-link">Get Host Link</button>
+        <button class="host-password">Host With Password</button>
+        <h2>Your Game</h2>
+        <form class="your-game"></form>
+        <h2>Local Games</h2>
+        <div class="local-games"></div>
+        <h2>Passworded Games</h2>
+        <div class="password-games"></div>
+        <pre class="error"></pre>
+    </body>
+  </html>
