@@ -64,7 +64,7 @@ module.exports = {
                 if(socket) {
                     socket.emit('lobby', {
                         type: 'room-update',
-                        game: mapLobbyGame(game),
+                        room: mapLobbyGame(game),
                         isUserHost: socketId === game.host
                     });
                 }
@@ -78,7 +78,7 @@ module.exports = {
                 if(socket) {
                     socket.emit('lobby', {
                         type: 'room-cancelled',
-                        game: mapLobbyGame(game)
+                        room: mapLobbyGame(game)
                     });
                 }
             });
@@ -88,7 +88,7 @@ module.exports = {
         const unicastLobby = (socket) => {
             socket.emit('lobby', {
                 type: 'listing',
-                games: {
+                rooms: {
                     local: LobbyService.getNearbyGames(socket.id),
                     password: LobbyService.getPasswordProtectedGames()
                 }
@@ -188,7 +188,7 @@ module.exports = {
                     const { action } = message;
                     switch(action.toLowerCase()) {
                     case 'host': {
-                        LobbyService.hostGame(id, message.game);
+                        LobbyService.hostGame(id, message.room);
                         markLobbyChanged();
                         break;
                     }

@@ -23,10 +23,10 @@
         });
 
         socket.on('lobby', (message) => {
-            const {game, games, type, isUserHost} = message;
+            const {room, rooms, type, isUserHost} = message;
             switch(type) {
                 case 'room-update': {
-                    const {type, password, players} = game;
+                    const {type, password, players} = room;
                     document.querySelector('.your-game').innerHTML = `
                         Type: ${type} ${password ? `[${password}]` : ''}<br>
                         Players: ${players.join(', ')}<br>
@@ -44,7 +44,7 @@
                     break;
                 }
                 case 'listing': {
-                    const {local, password} = games;
+                    const {local, password} = rooms;
                     document.querySelector('.local-games').innerHTML = local.map(({id, players}) => {
                         return `<div><button data-id="${id}">Join</button> <span>${players.join(', ')}</span></div>`;
                     });
@@ -116,8 +116,6 @@
                 const paragraph = document.createElement('paragraph');
                 paragraph.innerText = `${leader} has nominated ${currentNominations.map(value => players[value]).join(', ')}`;
                 form.appendChild(paragraph);
-
-                console.log(game);
 
                 if(!hasMadeSelection) {
                     const approve = document.createElement('button');
@@ -220,21 +218,21 @@
             document.querySelector('.host-local').addEventListener('click', () => {
                 socket.emit('lobby', {
                     action: 'host',
-                    game: { type: 'local' }
+                    room: { type: 'local' }
                 });
             });
 
             document.querySelector('.host-link').addEventListener('click', () => {
                 socket.emit('lobby', {
                     action: 'host',
-                    game: { type: 'link' }
+                    room: { type: 'link' }
                 });
             });
 
             document.querySelector('.host-password').addEventListener('click', () => {
                 socket.emit('lobby', {
                     action: 'host',
-                    game: { type: 'password', password: prompt('password') }
+                    room: { type: 'password', password: prompt('password') }
                 });
             });
 
