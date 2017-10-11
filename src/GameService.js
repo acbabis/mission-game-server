@@ -235,7 +235,7 @@ module.exports = (UserService, logger) => {
 
             switch(state) {
             case STATE_NOMINATION: {
-                // Do nothing
+                substate.nextMissionSize = MISSION_SIZES[players.length][missionHistory.length];
                 break;
             }
             case STATE_VOTE: {

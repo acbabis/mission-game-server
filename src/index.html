@@ -59,7 +59,7 @@
         socket.on('game', (game) => {
             const {
                 state, playerIndex, players, succession, badFaction, hasMadeSelection,
-                currentNominations, currentMissionGroup
+                currentNominations, currentMissionGroup, nextMissionSize
             } = game;
             const leader = succession[0];
             const gamePanel = document.querySelector('.your-game');
@@ -76,6 +76,11 @@
                     nomination.innerText = `Waiting for nomination from ${players[leader]}`;
                 } else {
                     const form = document.createElement('form');
+
+                    const p = document.createElement('p');
+                    p.innerText = `Select ${nextMissionSize}`;
+                    form.appendChild(p);
+
                     players.map((player, index) => {
                         const label = document.createElement('label');
 
