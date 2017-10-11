@@ -248,6 +248,12 @@ module.exports = (UserService, logger) => {
                 if(currentMissionGroup.includes(playerIndex)) {
                     substate.hasMadeSelection = typeof currentMissionSuccesses[playerIndex] === 'boolean';
                 }
+                break;
+            }
+            case STATE_END: {
+                // At the end of the game, roles are revealed
+                substate.badFaction = badFaction;
+                break;
             }
             }
 
