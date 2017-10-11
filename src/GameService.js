@@ -73,14 +73,14 @@ module.exports = (UserService, logger) => {
          * Starts a new game with the given list of players
          */
         startGame: (players) => {
-            const numBaddies = BAD_GUY_COUNTS[players.length];
-            const baddies = randIndexArray(players.length, numBaddies);
+            const badFactionSize = BAD_GUY_COUNTS[players.length];
+            const badFaction = randIndexArray(players.length, badFactionSize);
             const succession = randIndexArray(players.length, players.length);
             const game = {
                 id: shortid.generate(),
                 state: STATE_NOMINATION,
                 players,
-                baddies,
+                badFaction,
                 succession,
                 missionHistory: []
             };
@@ -214,19 +214,20 @@ module.exports = (UserService, logger) => {
                 throw new Error('Player not in game');
             }
             const {
-                id, state, players, baddies, succession,
+                id, state, players, badFaction, succession,
                 currentNominations, currentVotes, currentMissionGroup,
                 currentMissionSuccesses, lastVote, missionHistory
             } = game;
 
             const playerIndex = players.indexOf(playerId);
-            const isBaddie = baddies.includes(playerIndex);
+            const isBad = badFaction.includes(playerIndex);
 
             const substate = {
                 id,
+                playerIndex,
                 state,
                 players,
-                baddies: isBaddie ? baddies : undefined,
+                badFaction: isBad ? badFaction : undefined,
                 succession,
                 lastVote: lastVote ? Object.assign({}, lastVote) : undefined,
                 missionHistory: missionHistory.slice()

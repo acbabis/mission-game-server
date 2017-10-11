@@ -58,22 +58,22 @@
 
         socket.on('game', (game) => {
             const {
-                state, players, succession, baddies, hasMadeSelection,
+                state, playerIndex, players, succession, badFaction, hasMadeSelection,
                 currentNominations, currentMissionGroup
             } = game;
-            const leader = players[succession[0]];
+            const leader = succession[0];
             const gamePanel = document.querySelector('.your-game');
             const div = document.createElement('div');
 
             const role = document.createElement('h3');
-            role.innerText = baddies ? `Evil (${baddies.map(i => players[i]).join(', ')})` : 'Good';
+            role.innerText = badFaction ? `Evil (${badFaction.map(i => players[i]).join(', ')})` : 'Good';
             div.appendChild(role);
 
             switch(state) {
             case 'nomination': {
                 const nomination = document.createElement('div');
-                if(leader !== name) {
-                    nomination.innerText = `Waiting for nomination from ${leader}`;
+                if(playerIndex !== leader) {
+                    nomination.innerText = `Waiting for nomination from ${players[leader]}`;
                 } else {
                     const form = document.createElement('form');
                     players.map((player, index) => {
