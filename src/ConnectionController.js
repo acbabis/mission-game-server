@@ -1,13 +1,12 @@
 const BROADCAST_INTERVAL = 3000;
 
 const winston = require('winston');
-const path = require('path');
 
 // Instances of ConnectionController require a logger
 // that has a `log` method. If none is passed, a default
 // winston logger is created
 const getDefaultLogger = () => {
-    const LOG_FILE = path.join(__dirname, 'mission-game-server.log');
+    const LOG_FILE = 'mission-game-server.log';
     return new winston.Logger({
         level: 'verbose',
         transports: [
