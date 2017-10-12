@@ -115,7 +115,7 @@ module.exports = (UserService, logger) => {
                     host,
                     type,
                     players: players.map(id => UserService.getUserName(id))
-                }
+                };
             });
         },
 
@@ -129,7 +129,7 @@ module.exports = (UserService, logger) => {
                     type,
                     host,
                     players: players.map(id => UserService.getUserName(id))
-                }
+                };
             });
         },
 

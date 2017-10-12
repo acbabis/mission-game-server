@@ -156,6 +156,7 @@ module.exports = {
                     if(coords) {
                         // Updating geolocation
                         LobbyService.setUserLocation(id, coords);
+                        logger.log('verbose', `Player ${id} set coords: {lat: ${coords.latitude}, lon: ${coords.longitude}}`);
                         unicastLobby(socket);
                     }
                 } catch(e) {
