@@ -149,12 +149,13 @@ module.exports = (UserService, logger) => {
                         logger.log('verbose', `${game.id}: vote passes`);
                     } else {
                         game.state = STATE_NOMINATION;
+                        succession.push(succession.shift());
                         logger.log('verbose', `${game.id}: vote fails`);
+                        const nextLeader = UserService.getUserName(players[succession[0]]);
+                        logger.log('verbose', `${game.id}: ${nextLeader} is next leader`);
                     }
                     delete game.currentNominations;
-                    succession.push(succession.shift());
-                    const nextLeader = UserService.getUserName(players[succession[0]]);
-                    logger.log('verbose', `${game.id}: ${nextLeader} is next leader`);
+                    game.lastVote = currentVotes;
                 }
                 notifyObservers('update', game);
                 break;
@@ -193,6 +194,9 @@ module.exports = (UserService, logger) => {
                         game.state = STATE_END;
                     } else {
                         game.state = STATE_NOMINATION;
+                        succession.push(succession.shift());
+                        const nextLeader = UserService.getUserName(players[succession[0]]);
+                        logger.log('verbose', `${game.id}: ${nextLeader} is next leader`);
                     }
                 }
                 notifyObservers('update', game);
