@@ -232,6 +232,7 @@ module.exports = (UserService, logger) => {
                 state,
                 players,
                 badFaction: isBad ? badFaction : undefined,
+                missionSizes: MISSION_SIZES[players.length],
                 succession,
                 lastVote: lastVote ? Object.assign({}, lastVote) : undefined,
                 missionHistory: missionHistory.slice()
