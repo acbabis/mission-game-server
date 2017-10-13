@@ -159,12 +159,12 @@ module.exports = (UserService, logger) => {
         /**
          * Adds user to the specified game
          */
-        joinGame: (userId, {id, type, password}) => {
+        joinGame: (userId, {id, password}) => {
             const game = games.find(game => game.id === id);
             if(!game) {
                 throw new Error('No game with matching ID');
             }
-            if(type === TYPE_PASSWORD && password !== game.password) {
+            if(game.type === TYPE_PASSWORD && password !== game.password) {
                 throw new Error('Incorrect password');
             }
             const {players} = game;
