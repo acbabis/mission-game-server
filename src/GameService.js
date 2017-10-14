@@ -75,7 +75,16 @@ module.exports = (UserService, logger) => {
         startGame: (players) => {
             const badFactionSize = BAD_GUY_COUNTS[players.length];
             const badFaction = randIndexArray(players.length, badFactionSize);
-            const succession = randIndexArray(players.length, players.length);
+
+            // Randomly choose first leader
+            const firstLeaderIndex = Math.floor(players.length * Math.random());
+            // Leaders [0, n)
+            const firstSubsequence = new Array(players.length - firstLeaderIndex)
+                .fill(null).map((u, i) => i + firstLeaderIndex);
+            // Leaders [n, length)
+            const secondSubsequence = new Array(firstLeaderIndex).fill(null).map((u, i) => i);
+            const succession = firstSubsequence.concat(secondSubsequence);
+
             const game = {
                 id: shortid.generate(),
                 state: STATE_NOMINATION,
