@@ -100,7 +100,7 @@ module.exports = (UserService, logger) => {
                 throw new Error('Player not in game');
             }
             const {
-                state, players, succession, missionHistory,
+                state, players, badFaction, succession, missionHistory,
                 currentVotes, currentMissionGroup, currentMissionSuccesses
             } = game;
             const {nominations, approve, succeed} = move;
@@ -166,6 +166,9 @@ module.exports = (UserService, logger) => {
                 }
                 if(typeof succeed !== 'boolean') {
                     throw new Error('"succeed" must be a boolean');
+                }
+                if(!succeed && !badFaction.includes(playerIndex)) {
+                    throw new Error('Good faction must choose "succeed"');
                 }
                 currentMissionSuccesses[playerIndex] = succeed;
                 logger.log('verbose', `${game.id}: ${playerName} selects ${succeed ? 'succeed' : 'fail'} for the current mission`);
