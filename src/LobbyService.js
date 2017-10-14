@@ -31,7 +31,11 @@ module.exports = (UserService, logger) => {
             .map(({handler}) => handler)
             .forEach(handler => {
                 try {
-                    handler(event);
+                    if(event.player) {
+                        handler(event.game, event.player);
+                    } else {
+                        handler(event);
+                    }
                 } catch(e) {
                     logger.log('error', e);
                 }
@@ -145,11 +149,12 @@ module.exports = (UserService, logger) => {
                 logger.log('verbose', `${UserService.getUserName(userId)} (host) left ${game.id}`);
             }
 
-            games.forEach(({players}) => {
+            games.forEach(game => {
+                const {players} = game;
                 const index = players.indexOf(userId);
                 if(index >= 0) {
-                    const game = players.splice(index, 1)[0];
-                    notifyObservers('leave', game, logger);
+                    const player = players.splice(index, 1)[0];
+                    notifyObservers('leave', {game, player}, logger);
                     notifyObservers('change', game, logger);
                     logger.log('verbose', `${UserService.getUserName(userId)} (player) left ${game.id}`);
                 }

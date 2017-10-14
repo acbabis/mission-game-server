@@ -26,6 +26,10 @@
             const {room, rooms, type, isUserHost} = message;
             switch(type) {
                 case 'room-update': {
+                    if(room === null) {
+                        document.querySelector('.your-game').innerHTML = '';
+                        return;
+                    }
                     const {type, password, players} = room;
                     document.querySelector('.your-game').innerHTML = `
                         Type: ${type} ${password ? `[${password}]` : ''}<br>

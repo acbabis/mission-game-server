@@ -57,7 +57,7 @@ module.exports = {
         };
 
         // Sends update for a given lobby entry to all players in that room
-        const broadcastLobbyGameUpdate = (game) => {
+        const broadcastLobbyGameUpdate = (game, player) => {
             game.players.forEach(socketId => {
                 const socket = io.sockets.connected[socketId];
                 if(socket) {
@@ -68,6 +68,17 @@ module.exports = {
                     });
                 }
             });
+            // If player param is present, this is a 'leave' event
+            // and the now-absent player needs to be notified separately
+            if(player) {
+                const socket = io.sockets.connected[player];
+                if(socket) {
+                    socket.emit('lobby', {
+                        type: 'room-update',
+                        room: null
+                    });
+                }
+            }
         };
 
         // Sends update regarding lobby room removal to all players in that room
