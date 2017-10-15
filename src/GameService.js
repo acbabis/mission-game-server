@@ -252,7 +252,7 @@ module.exports = (UserService, logger) => {
             }
             const {
                 id, state, players, badFaction, succession,
-                currentNominations, currentVotes, currentMissionGroup,
+                currentNominations, rejectedNominations, currentVotes, currentMissionGroup,
                 currentMissionSuccesses, lastVote, missionHistory
             } = game;
 
@@ -266,6 +266,7 @@ module.exports = (UserService, logger) => {
                 players,
                 badFaction: isBad ? badFaction : undefined,
                 missionSizes: MISSION_SIZES[players.length],
+                rejectedNominations: rejectedNominations.slice(),
                 succession,
                 lastVote: lastVote ? Object.assign({}, lastVote) : undefined,
                 missionHistory: missionHistory.slice()
