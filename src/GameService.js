@@ -91,7 +91,8 @@ module.exports = (UserService, logger) => {
                 players,
                 badFaction,
                 succession,
-                missionHistory: []
+                missionHistory: [],
+                rejectedNominations: []
             };
             games.push(game);
             notifyObservers('start', game);
@@ -109,7 +110,7 @@ module.exports = (UserService, logger) => {
                 throw new Error('Player not in game');
             }
             const {
-                state, players, badFaction, succession, missionHistory,
+                state, players, badFaction, succession, missionHistory, rejectedNominations,
                 currentVotes, currentMissionGroup, currentMissionSuccesses
             } = game;
             const {nominations, approve, succeed} = move;
@@ -118,6 +119,21 @@ module.exports = (UserService, logger) => {
             const numOnMission = MISSION_SIZES[players.length][currentRound];
             const playerName = UserService.getUserName(playerId);
             const playerIndex = players.indexOf(playerId);
+
+            const checkForGameEnd = () => {
+                const numFailedMissions = missionHistory.map(({isFailure}) => +isFailure).reduce((a, b) => a + b, 0);
+                const numSuccessfulMissions = missionHistory.length - numFailedMissions;
+
+                if(numFailedMissions === 3) {
+                    logger.log('verbose', `${game.id}: game ended in defeat`);
+                    game.state = STATE_END;
+                    return true;
+                } else if(numSuccessfulMissions === 3) {
+                    logger.log('verbose', `${game.id}: game ended in success`);
+                    game.state = STATE_END;
+                    return true;
+                } 
+            };
 
             switch(state) {
             case STATE_NOMINATION: {
@@ -153,15 +169,29 @@ module.exports = (UserService, logger) => {
                     const approveCount = Object.values(currentVotes).reduce((a, b) => a + b, 0);
                     if(approveCount >= players.length / 2) {
                         game.state = STATE_MISSION;
+                        game.rejectedNominations = [];
                         game.currentMissionGroup = game.currentNominations;
                         game.currentMissionSuccesses = {};
                         logger.log('verbose', `${game.id}: vote passes`);
                     } else {
                         game.state = STATE_NOMINATION;
+                        rejectedNominations.push(succession[0]);
                         succession.push(succession.shift());
                         logger.log('verbose', `${game.id}: vote fails`);
                         const nextLeader = UserService.getUserName(players[succession[0]]);
                         logger.log('verbose', `${game.id}: ${nextLeader} is next leader`);
+                        if(rejectedNominations.length === 5) {
+                            // Mission automatically fails
+                            game.rejectedNominations = [];
+                            missionHistory.push({
+                                numFails: null,
+                                isFailure: true
+                            });
+                            delete game.currentMissionGroup;
+                            delete game.currentMissionSuccesses;
+                            logger.log('verbose', `${game.id}: mission automatically failed`);
+                            checkForGameEnd();
+                        }
                     }
                     delete game.currentNominations;
                     game.lastVote = currentVotes;
@@ -195,16 +225,7 @@ module.exports = (UserService, logger) => {
                     delete game.currentMissionGroup;
                     delete game.currentMissionSuccesses;
 
-                    const numFailedMissions = missionHistory.map(({isFailure}) => +isFailure).reduce((a, b) => a + b, 0);
-                    const numSuccessfulMissions = missionHistory.length - numFailedMissions;
-
-                    if(numFailedMissions === 3) {
-                        logger.log('verbose', `${game.id}: game ended in defeat`);
-                        game.state = STATE_END;
-                    } else if(numSuccessfulMissions === 3) {
-                        logger.log('verbose', `${game.id}: game ended in success`);
-                        game.state = STATE_END;
-                    } else {
+                    if(!checkForGameEnd()) {
                         game.state = STATE_NOMINATION;
                         succession.push(succession.shift());
                         const nextLeader = UserService.getUserName(players[succession[0]]);
