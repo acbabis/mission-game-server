@@ -115,7 +115,21 @@ module.exports = {
         const broadcastGameDetails = (game) => {
             game.players.map(playerId => io.sockets.connected[playerId])
                 .filter(Boolean).forEach(socket => {
-                    socket.emit('game', mapPlayedGame(GameService.getPlayerGameInfo(game.id, socket.id)));
+                    socket.emit('game', {
+                        type: 'update',
+                        game: mapPlayedGame(GameService.getPlayerGameInfo(game.id, socket.id))
+                    });
+                });
+        };
+
+        // Informs players that someone has left and the game can't proceed
+        const broadcastGameLeave = (game) => {
+            game.players.map(playerId => io.sockets.connected[playerId])
+                .filter(Boolean).forEach(socket => {
+                    socket.emit('game', {
+                        type: 'leave',
+                        game: mapPlayedGame(GameService.getPlayerGameInfo(game.id, socket.id))
+                    });
                 });
         };
 
@@ -140,6 +154,7 @@ module.exports = {
 
         GameService.addEventListener('start', broadcastGameDetails);
         GameService.addEventListener('update', broadcastGameDetails);
+        GameService.addEventListener('leave', broadcastGameLeave);
 
         io.on('connection', (socket) => {
             const {id} = socket;
@@ -226,6 +241,7 @@ module.exports = {
 
             socket.on('disconnect', () => {
                 LobbyService.leaveGames(id);
+                GameService.leaveGames(id);
                 UserService.handleLogout(id);
             });
         });

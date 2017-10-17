@@ -60,13 +60,17 @@
             }
         });
 
-        socket.on('game', (game) => {
+        socket.on('game', (({type, game}) => {
+            const gamePanel = document.querySelector('.your-game');
+            if(type === 'leave') {
+                gamePanel.innerText = 'A player has left';
+                return;
+            }
             const {
                 state, playerIndex, players, succession, badFaction, hasMadeSelection,
                 currentNominations, currentMissionGroup, nextMissionSize
             } = game;
             const leader = succession[0];
-            const gamePanel = document.querySelector('.your-game');
             const div = document.createElement('div');
 
             const role = document.createElement('h3');
@@ -202,7 +206,7 @@
 
             gamePanel.innerHTML = '';
             gamePanel.appendChild(div);
-        });
+        }));
 
         socket.on('service-error', (error) => {
             document.querySelector('.error').innerText = error;

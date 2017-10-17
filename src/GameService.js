@@ -5,7 +5,7 @@ const EVENT_TYPES = [
     'start',
     'end',
     'update',
-    'cancel'
+    'leave'
 ];
 
 // Sequences of round-to-round mission sizes, based on player count
@@ -45,7 +45,7 @@ const randIndexArray = (size, count) => {
 };
 
 module.exports = (UserService, logger) => {
-    const games = [];
+    let games = [];
 
     // Notifies registered (external) event listeners of an event
     const eventHandlers = [];
@@ -297,6 +297,23 @@ module.exports = (UserService, logger) => {
             }
 
             return substate;
+        },
+
+        /**
+         * Removes given player from all their current games.
+         * Informs subscribers that those games have been
+         * cancelled.
+         */
+        leaveGames: (id) => {
+            games = games.filter(game => {
+                const {players} = game;
+                if(players.includes(id)) {
+                    notifyObservers('leave', game);
+                    return false;
+                } else {
+                    return true;
+                }
+            });
         },
 
         /**
