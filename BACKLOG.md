@@ -1,0 +1,3 @@
+- Improve and document UserService. Allow it to handle asyncronicity
+- Provide a default backing service (flatfile?) for UserService?
+- Allow Facebook and Google+ integration
